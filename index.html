@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deepweights DER — Document Extraction & Recognition</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50:  '#eef0fd',
+              100: '#d9ddfb',
+              200: '#b3bbf7',
+              500: '#5b6be8',
+              600: '#4a59d6',
+              700: '#3a48c4',
+            },
+            coral: {
+              400: '#f47474',
+              500: '#f05252',
+              600: '#e03a3a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; }
+
+    .gradient-bg {
+      background: linear-gradient(135deg, #f7f8ff 0%, #eef0fd 60%, #f7f8ff 100%);
+    }
+
+    .card-shadow {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 18px rgba(91,107,232,0.09);
+    }
+
+    .hover-lift {
+      transition: box-shadow 0.22s ease, transform 0.22s ease;
+    }
+    .hover-lift:hover {
+      box-shadow: 0 6px 28px rgba(91,107,232,0.18);
+      transform: translateY(-2px);
+    }
+
+    .code-block {
+      background: #0d0f18;
+      border-radius: 14px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tab-btn { transition: all 0.18s ease; color: #6b7280; }
+    .tab-btn.active {
+      background: white;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.10);
+      color: #5b6be8;
+      font-weight: 600;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .label-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .score-bar {
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up   { animation: fadeUp 0.5s ease both; }
+    .delay-1   { animation-delay: 0.1s; }
+    .delay-2   { animation-delay: 0.2s; }
+    .delay-3   { animation-delay: 0.3s; }
+
+    .step-line {
+      width: 2px;
+      height: 36px;
+      margin: 0 auto;
+      background: linear-gradient(180deg, #5b6be8 0%, #d9ddfb 100%);
+    }
+
+    .privacy-card {
+      background: linear-gradient(135deg, #0d0f18 0%, #161929 100%);
+    }
+
+    .api-tab-btn { transition: all 0.15s ease; }
+    .api-tab-btn.active {
+      background: #5b6be8;
+      color: white;
+    }
+
+    pre { white-space: pre; overflow-x: auto; }
+
+    .slash-accent { color: #f05252; }
+    .dw-blue { color: #5b6be8; }
+
+    nav a { transition: color 0.15s; }
+    nav a:hover { color: #5b6be8; }
+  </style>
+</head>
+<body class="bg-white text-gray-900 antialiased">
+
+  <!-- ── Nav ─────────────────────────────────────────── -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white/85 backdrop-blur-md border-b border-gray-100">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="#" class="flex items-center gap-2">
+        <img src="assets/fulllogo_transparent_nobuffer.png" alt="Deepweights" class="h-7 w-auto" />
+        <span class="text-xs font-semibold bg-brand-50 text-brand-500 border border-brand-100 px-2 py-0.5 rounded-md">DER</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-sm text-gray-500 font-medium">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#api">API</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#use-cases">Use cases</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+      <a href="#" data-api-access class="text-sm bg-brand-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-brand-600 transition-colors">Get API Access</a>
+    </div>
+  </nav>
+
+  <!-- ── Hero ─────────────────────────────────────────── -->
+  <section class="gradient-bg pt-32 pb-24 px-6">
+    <div class="max-w-6xl mx-auto">
+
+      <!-- headline -->
+      <div class="text-center mb-14 fade-up">
+        <div class="inline-flex items-center gap-2 bg-white border border-brand-100 text-brand-600 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 card-shadow">
+          <span class="w-1.5 h-1.5 rounded-full bg-coral-500"></span>
+          Document Extraction &amp; Recognition
+        </div>
+        <h1 class="text-5xl md:text-6xl font-bold tracking-tight text-gray-900 mb-5 leading-[1.12]">
+          Turn Any Document Into<br class="hidden md:block" />
+          <span class="text-brand-500">Structured Data</span>
+        </h1>
+        <p class="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+          Custom Document AI that extracts structured fields from images, PDFs, and OCR with high accuracy.
+        </p>
+        <div class="flex items-center justify-center gap-4 flex-wrap">
+          <a href="#" data-api-access class="bg-brand-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-brand-600 transition-colors card-shadow">Get API Access</a>
+          <a href="#" data-demo-request class="text-gray-600 px-6 py-3 rounded-xl font-semibold border border-gray-200 hover:border-brand-200 hover:text-brand-600 transition-colors bg-white card-shadow">Request a Demo</a>
+        </div>
+      </div>
+
+      <!-- Demo card -->
+      <div class="bg-white border border-gray-100 rounded-2xl card-shadow max-w-4xl mx-auto overflow-hidden fade-up delay-2">
+        <!-- window chrome -->
+        <div class="bg-gray-50 border-b border-gray-100 px-5 py-3 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+          <span class="ml-3 text-xs text-gray-400 font-mono">DER — Live Extraction Demo</span>
+        </div>
+        <div class="grid md:grid-cols-2">
+          <!-- input -->
+          <div class="p-6 border-r border-gray-100">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Input Document</p>
+            <div class="rounded-xl overflow-hidden border border-gray-100 relative">
+              <img src="assets/f_aadhaar.jpg" alt="Sample Aadhaar Card" class="w-full object-cover" />
+              <!-- overlay boxes – positions derived from actual box coords vs 1280×816 image -->
+              <div class="absolute inset-0 pointer-events-none">
+                <!-- name: y≈230/816=28.2%, x≈426/1280=33.3%, w≈(704-426)/1280=21.7%, h≈(265-230)/816=4.3% -->
+                <div class="absolute border-2 border-brand-500 rounded-sm" style="top:28.2%;left:33.3%;width:21.7%;height:4.3%;">
+                  <span class="label-pill absolute -top-5 left-0 bg-brand-100 text-brand-600">name</span>
+                </div>
+                <!-- dob: y≈273/816=33.5%, x≈422/1280=33%, w≈(828-422)/1280=31.7%, h≈(306-273)/816=4% -->
+                <div class="absolute border-2 border-green-500 rounded-sm" style="top:33.5%;left:33%;width:31.7%;height:4%;">
+                  <span class="label-pill absolute -top-5 left-0 bg-green-100 text-green-700">dob</span>
+                </div>
+                <!-- gender: y≈319/816=39.1%, x≈421/1280=32.9%, w≈(590-421)/1280=13.2%, h≈(359-319)/816=4.9% -->
+                <div class="absolute border-2 border-purple-500 rounded-sm" style="top:39.1%;left:32.9%;width:13.2%;height:4.9%;">
+                  <span class="label-pill absolute -top-5 left-0 bg-purple-100 text-purple-700">gender</span>
+                </div>
+                <!-- uid: y≈647/816=79.3%, x≈372/1280=29%, w≈(960-372)/1280=45.9%, h≈(690-647)/816=5.3% -->
+                <div class="absolute border-2 border-coral-500 rounded-sm" style="top:79.3%;left:29%;width:45.9%;height:5.3%;">
+                  <span class="label-pill absolute -top-5 left-0 bg-red-100 text-red-600">uid</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- output -->
+          <div class="p-6">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Extracted Fields</p>
+            <div class="space-y-2.5">
+              <!-- name -->
+              <div class="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="label-pill bg-brand-100 text-brand-600">name</span>
+                  <span class="text-xs text-gray-400 font-mono">0.939</span>
+                </div>
+                <p class="font-mono text-sm text-gray-800 mt-1.5">"Karan XXX Reddy"</p>
+                <div class="score-bar mt-2 bg-brand-500" style="width:93.9%"></div>
+              </div>
+              <!-- dob -->
+              <div class="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="label-pill bg-green-100 text-green-700">dob</span>
+                  <span class="text-xs text-gray-400 font-mono">0.955</span>
+                </div>
+                <p class="font-mono text-sm text-gray-800 mt-1.5">"05/XX/1998"</p>
+                <div class="score-bar mt-2 bg-green-500" style="width:95.5%"></div>
+              </div>
+              <!-- gender -->
+              <div class="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="label-pill bg-purple-100 text-purple-700">gender</span>
+                  <span class="text-xs text-gray-400 font-mono">0.913</span>
+                </div>
+                <p class="font-mono text-sm text-gray-800 mt-1.5">"MALE"</p>
+                <div class="score-bar mt-2 bg-purple-500" style="width:91.3%"></div>
+              </div>
+              <!-- uid -->
+              <div class="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="label-pill bg-red-100 text-red-600">uid</span>
+                  <span class="text-xs text-gray-400 font-mono">0.966</span>
+                </div>
+                <p class="font-mono text-sm text-gray-800 mt-1.5">"XXX XXXX XXXX 7890"</p>
+                <div class="score-bar mt-2 bg-coral-500" style="width:96.6%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── What It Does ──────────────────────────────────── -->
+  <section class="py-24 px-6 bg-white" id="what-it-does">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid md:grid-cols-2 gap-16 items-center">
+        <div>
+          <span class="text-xs font-semibold text-brand-500 uppercase tracking-wider">What It Does</span>
+          <h2 class="text-3xl font-bold mt-3 mb-5 text-gray-900">Documents in. JSON out.</h2>
+          <p class="text-gray-500 text-lg leading-relaxed mb-6">
+            Deepweights DER is a Document AI platform that converts unstructured documents — scans, photos, PDFs — into clean structured JSON your applications can use directly.
+          </p>
+          <ul class="space-y-3 text-gray-600">
+            <li class="flex items-start gap-3">
+              <div class="w-5 h-5 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="#5b6be8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              Custom-trained per document type — not a generic model
+            </li>
+            <li class="flex items-start gap-3">
+              <div class="w-5 h-5 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="#5b6be8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              Returns boxes with label, text, score, and bounding coordinates — or flat key-value with
+            </li>
+            <li class="flex items-start gap-3">
+              <div class="w-5 h-5 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="#5b6be8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              Handles noisy real-world documents — not just clean lab scans
+            </li>
+          </ul>
+        </div>
+        <div class="code-block p-6">
+          <div class="flex items-center gap-2 mb-4 border-b border-white/10 pb-3">
+            <span class="w-2 h-2 rounded-full bg-coral-500"></span>
+            <span class="text-gray-400 font-mono text-xs">response.json</span>
+          </div>
+          <pre class="text-xs leading-6"><span class="text-gray-500">// Response (default — layout output)</span>
+<span class="text-gray-400">{</span>
+  <span class="text-blue-300">"width"</span>: <span class="text-orange-300">1280</span>, <span class="text-blue-300">"height"</span>: <span class="text-orange-300">816</span>,
+  <span class="text-blue-300">"boxes"</span>: <span class="text-gray-400">[</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"name"</span>,   <span class="text-blue-300">"text"</span>: <span class="text-green-300">"Karan XXX Reddy"</span>,     <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.939</span>, <span class="text-blue-300">"box"</span>: <span class="text-gray-500">[[426,230],[704,230],[704,265],[426,265]]</span> <span class="text-gray-400">},</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"dob"</span>,    <span class="text-blue-300">"text"</span>: <span class="text-green-300">"05/XX/1998"</span>,           <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.955</span>, <span class="text-blue-300">"box"</span>: <span class="text-gray-500">[[422,273],[828,273],[828,306],[422,306]]</span> <span class="text-gray-400">},</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"gender"</span>, <span class="text-blue-300">"text"</span>: <span class="text-green-300">"MALE"</span>,               <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.913</span>, <span class="text-blue-300">"box"</span>: <span class="text-gray-500">[[421,319],[590,319],[590,359],[421,359]]</span> <span class="text-gray-400">},</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"uid"</span>,    <span class="text-blue-300">"text"</span>: <span class="text-green-300">"XXX XXXX XXXX 7890"</span>, <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.966</span>, <span class="text-blue-300">"box"</span>: <span class="text-gray-500">[[372,647],[960,647],[960,690],[372,690]]</span> <span class="text-gray-400">}</span>
+  <span class="text-gray-400">]</span>
+<span class="text-gray-400">}</span>
+
+<span class="text-gray-500">// Add ?format=simple for clean key-value output</span>
+<span class="text-gray-400">{</span> <span class="text-blue-300">"name"</span>: <span class="text-green-300">"Karan XXX Reddy"</span>, <span class="text-blue-300">"dob"</span>: <span class="text-green-300">"05/XX/1998"</span>, <span class="text-blue-300">"gender"</span>: <span class="text-green-300">"MALE"</span>, <span class="text-blue-300">"uid"</span>: <span class="text-green-300">"XXX XXXX XXXX 7890"</span> <span class="text-gray-400">}</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features ─────────────────────────────────────── -->
+  <section class="py-24 px-6 gradient-bg" id="features">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-14">
+        <span class="text-xs font-semibold text-brand-500 uppercase tracking-wider">Features</span>
+        <h2 class="text-3xl font-bold mt-3 text-gray-900">Built for production accuracy</h2>
+        <p class="text-gray-500 mt-3 max-w-xl mx-auto">Everything you need to extract structured data from documents at scale.</p>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <div class="bg-white rounded-2xl p-6 card-shadow hover-lift">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="6" height="6" rx="1.5" fill="#5b6be8"/><rect x="11" y="3" width="6" height="6" rx="1.5" fill="#b3bbf7"/><rect x="3" y="11" width="6" height="6" rx="1.5" fill="#b3bbf7"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill="#5b6be8"/></svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-2">Custom-trained models</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Each document type gets its own model trained on your samples — no generic one-size-fits-all approach.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 card-shadow hover-lift">
+          <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="#22c55e" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-2">Any OCR, any source</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Works with Google Vision, Azure AI Vision, or custom OCR — any engine that outputs <code class="font-mono text-xs text-brand-500">BoundingPoly</code> coordinates.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 card-shadow hover-lift">
+          <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="14" height="14" rx="3" stroke="#a855f7" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-2">Regex validation &amp; formatting</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Optional post-extraction rules to validate and reformat dates, IDs, phone numbers, and more.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 card-shadow hover-lift">
+          <div class="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="10" rx="2" stroke="#eab308" stroke-width="1.5"/><path d="M7 9h6M7 12h4" stroke="#eab308" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-2">Layout-aware extraction</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Uses spatial position alongside text. Bounding boxes tell the model <em>where</em> a field appears — not just what it says.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 card-shadow hover-lift">
+          <div class="w-10 h-10 rounded-xl bg-coral-500/10 flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 4v6l4 2" stroke="#f05252" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="10" r="7" stroke="#f05252" stroke-width="1.5"/></svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-2">High accuracy on noisy docs</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Handles skewed scans, low-res photos, mixed-script text, and stamps — real-world conditions, not lab images.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 card-shadow hover-lift">
+          <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 10h10M10 5l5 5-5 5" stroke="#5b6be8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-2">Simple REST API</h3>
+          <p class="text-gray-500 text-sm leading-relaxed">One endpoint, JSON in, JSON out. Two modes: direct image upload or pass your OCR output. No SDK required.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── How It Works ──────────────────────────────────── -->
+  <section class="py-24 px-6 bg-white" id="how-it-works">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-16">
+        <span class="text-xs font-semibold text-brand-500 uppercase tracking-wider">How It Works</span>
+        <h2 class="text-3xl font-bold mt-3 text-gray-900">Three steps to production</h2>
+        <p class="text-gray-500 mt-3">From document samples to live API in days.</p>
+      </div>
+      <div>
+        <div class="flex gap-8 items-start">
+          <div class="flex flex-col items-center flex-shrink-0 w-12">
+            <div class="w-12 h-12 rounded-2xl bg-brand-500 text-white flex items-center justify-center font-bold text-lg">1</div>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-6 flex-1 border border-gray-100 hover-lift mb-0">
+            <h3 class="font-semibold text-gray-900 text-lg mb-2">Share sample documents</h3>
+            <p class="text-gray-500 leading-relaxed">Send us a set of sample documents — no annotation needed. We handle all labelling and annotation ourselves.</p>
+          </div>
+        </div>
+        <div class="step-line ml-6 my-1"></div>
+        <div class="flex gap-8 items-start">
+          <div class="flex flex-col items-center flex-shrink-0 w-12">
+            <div class="w-12 h-12 rounded-2xl bg-brand-500 text-white flex items-center justify-center font-bold text-lg">2</div>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-6 flex-1 border border-gray-100 hover-lift">
+            <h3 class="font-semibold text-gray-900 text-lg mb-2">We train and deploy</h3>
+            <p class="text-gray-500 leading-relaxed">We train a custom model for your document type and deploy it on our infrastructure — fully managed, no setup on your end.</p>
+          </div>
+        </div>
+        <div class="step-line ml-6 my-1"></div>
+        <div class="flex gap-8 items-start">
+          <div class="flex flex-col items-center flex-shrink-0 w-12">
+            <div class="w-12 h-12 rounded-2xl bg-brand-500 text-white flex items-center justify-center font-bold text-lg">3</div>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-6 flex-1 border border-gray-100 hover-lift">
+            <h3 class="font-semibold text-gray-900 text-lg mb-2">Call API, get structured output</h3>
+            <p class="text-gray-500 leading-relaxed">Send your OCR output or raw image. Get structured fields back — with layout coordinates and confidence scores — in milliseconds.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── API Reference ─────────────────────────────────── -->
+  <section class="py-24 px-6 gradient-bg" id="api">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12">
+        <span class="text-xs font-semibold text-brand-500 uppercase tracking-wider">API Reference</span>
+        <h2 class="text-3xl font-bold mt-3 text-gray-900">Two ways to call the API</h2>
+        <p class="text-gray-500 mt-3 max-w-xl mx-auto">Bring your own OCR output, or upload an image and let us handle OCR via Google Cloud Vision or our internal model. Same structured response either way.</p>
+      </div>
+
+      <!-- API tabs -->
+      <div class="bg-white rounded-2xl card-shadow overflow-hidden">
+        <div class="flex p-1.5 gap-1 bg-gray-50 border-b border-gray-100 m-4 rounded-xl">
+          <button class="api-tab-btn flex-1 text-sm font-medium py-2 px-4 rounded-lg active" onclick="switchApiTab('ocr', this)">OCR Input (BYOCR)</button>
+          <button class="api-tab-btn flex-1 text-sm font-medium py-2 px-4 rounded-lg text-gray-500" onclick="switchApiTab('image', this)">Image Upload (Auto OCR)</button>
+        </div>
+
+        <div id="api-ocr" class="p-6 pt-2">
+          <p class="text-xs text-gray-400 font-mono mb-3">// POST /der/model/predict/{model_id} — Send OCR output (rec + det), model ID in path</p>
+          <div class="code-block p-5 text-xs font-mono leading-relaxed overflow-x-auto">
+<pre><span class="text-coral-500">POST</span> <span class="text-gray-300">/der/model/predict/</span><span class="text-yellow-300">{model_id}</span>
+<span class="text-gray-500">Content-Type: application/json</span>
+
+<span class="text-gray-400">{</span>
+  <span class="text-blue-300">"rules"</span>: <span class="text-gray-400">{},</span>
+  <span class="text-blue-300">"rec"</span>: <span class="text-gray-400">[</span>
+    <span class="text-green-300">"Karan XXX Reddy"</span>,
+    <span class="text-green-300">"जन्म तिथि/DOB: 05/XX/1998"</span>,
+    <span class="text-green-300">"पुरुष/ MALE"</span>,
+    <span class="text-green-300">"XXX XXXX XXXX 7890"</span>
+    <span class="text-gray-500">...  </span><span class="text-gray-600">// full OCR text array</span>
+  <span class="text-gray-400">],</span>
+  <span class="text-blue-300">"det"</span>: <span class="text-gray-400">[</span>
+    <span class="text-gray-400">[[426,230],[704,230],[704,265],[426,265]],</span>
+    <span class="text-gray-400">[[422,273],[828,273],[828,306],[422,306]],</span>
+    <span class="text-gray-500">...  </span><span class="text-gray-600">// bounding boxes for each word</span>
+  <span class="text-gray-400">],</span>
+  <span class="text-blue-300">"width"</span>: <span class="text-orange-300">1280</span>,
+  <span class="text-blue-300">"height"</span>: <span class="text-orange-300">816</span>
+<span class="text-gray-400">}</span>
+
+<span class="text-gray-600">─────────────────────────────────────────</span>
+<span class="text-gray-500">// Response (default — layout output)</span>
+<span class="text-gray-400">{</span>
+  <span class="text-blue-300">"width"</span>: <span class="text-orange-300">1280</span>, <span class="text-blue-300">"height"</span>: <span class="text-orange-300">816</span>,
+  <span class="text-blue-300">"boxes"</span>: <span class="text-gray-400">[</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"name"</span>, <span class="text-blue-300">"text"</span>: <span class="text-yellow-300">"Karan XXX Reddy"</span>, <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.939</span>, <span class="text-blue-300">"box"</span>: <span class="text-gray-400">[[426,230],...]</span> <span class="text-gray-400">},</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"dob"</span>,  <span class="text-blue-300">"text"</span>: <span class="text-yellow-300">"05/XX/1998"</span>,      <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.955</span>, <span class="text-blue-300">"box"</span>: <span class="text-gray-400">[[422,273],...]</span> <span class="text-gray-400">},</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"uid"</span>,  <span class="text-blue-300">"text"</span>: <span class="text-yellow-300">"XXX XXXX XXXX 7890"</span>, <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.966</span>, <span class="text-blue-300">"box"</span>: <span class="text-gray-400">[[372,647],...]</span> <span class="text-gray-400">}</span>
+  <span class="text-gray-400">]</span>
+<span class="text-gray-400">}</span>
+
+<span class="text-gray-500">// Add ?format=simple for clean key-value output</span>
+<span class="text-gray-400">{</span> <span class="text-blue-300">"name"</span>: <span class="text-yellow-300">"Karan XXX Reddy"</span>, <span class="text-blue-300">"dob"</span>: <span class="text-yellow-300">"05/XX/1998"</span>, <span class="text-blue-300">"gender"</span>: <span class="text-yellow-300">"MALE"</span>, <span class="text-blue-300">"uid"</span>: <span class="text-yellow-300">"XXX XXXX XXXX 7890"</span> <span class="text-gray-400">}</span></pre>
+          </div>
+        </div>
+
+        <div id="api-image" class="p-6 pt-2" style="display:none">
+          <p class="text-xs text-gray-400 font-mono mb-3">// POST /der/model/predict/{model_id}/img — Upload image directly. OCR is handled internally (Google Cloud Vision or our internal model).</p>
+          <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-3 mb-4 flex gap-2.5 items-start">
+            <svg class="flex-shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ca8a04" stroke-width="1.2"/><path d="M7 5v3M7 9.5v.5" stroke="#ca8a04" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <p class="text-xs text-yellow-800 leading-relaxed">When uploading an image directly, OCR is run internally using <strong>Google Cloud Vision</strong> or our <strong>internal OCR model</strong> — no OCR data needed from your side.</p>
+          </div>
+          <div class="code-block p-5 text-xs font-mono leading-relaxed overflow-x-auto">
+<pre><span class="text-gray-500">// cURL</span>
+<span class="text-coral-500">curl</span> -X POST <span class="text-yellow-300">'{{host_name}}/der/model/predict/aadhaar_v8/img'</span> \
+  -H <span class="text-green-300">'accept: application/json'</span> \
+  -H <span class="text-green-300">'Content-Type: multipart/form-data'</span> \
+  -F <span class="text-green-300">'file=@aadhaar.jpg;type=image/jpeg'</span>
+
+<span class="text-gray-600">─────────────────────────────────────────</span>
+<span class="text-gray-500">// Response (default — layout output)</span>
+<span class="text-gray-400">{</span>
+  <span class="text-blue-300">"width"</span>: <span class="text-orange-300">1280</span>, <span class="text-blue-300">"height"</span>: <span class="text-orange-300">816</span>,
+  <span class="text-blue-300">"boxes"</span>: <span class="text-gray-400">[</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"name"</span>, <span class="text-blue-300">"text"</span>: <span class="text-yellow-300">"Karan XXX Reddy"</span>, <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.939</span> <span class="text-gray-400">},</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"dob"</span>,  <span class="text-blue-300">"text"</span>: <span class="text-yellow-300">"05/XX/1998"</span>,      <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.955</span> <span class="text-gray-400">},</span>
+    <span class="text-gray-400">{</span> <span class="text-blue-300">"label"</span>: <span class="text-yellow-300">"uid"</span>,  <span class="text-blue-300">"text"</span>: <span class="text-yellow-300">"XXX XXXX XXXX 7890"</span>, <span class="text-blue-300">"score"</span>: <span class="text-orange-300">0.966</span> <span class="text-gray-400">}</span>
+  <span class="text-gray-400">]</span>
+<span class="text-gray-400">}</span>
+
+<span class="text-gray-500">// Add ?format=simple for clean key-value output</span>
+<span class="text-gray-400">{</span> <span class="text-blue-300">"name"</span>: <span class="text-yellow-300">"Karan XXX Reddy"</span>, <span class="text-blue-300">"dob"</span>: <span class="text-yellow-300">"05/XX/1998"</span>, <span class="text-blue-300">"gender"</span>: <span class="text-yellow-300">"MALE"</span>, <span class="text-blue-300">"uid"</span>: <span class="text-yellow-300">"XXX XXXX XXXX 7890"</span> <span class="text-gray-400">}</span></pre>
+          </div>
+        </div>
+
+        <!-- format=simple callout -->
+        <div class="mx-6 mb-6 bg-brand-50 border border-brand-100 rounded-xl p-4 flex gap-3 items-start">
+          <span class="font-mono text-xs bg-brand-500 text-white px-2 py-1 rounded-md flex-shrink-0">?format=simple</span>
+          <p class="text-sm text-gray-600">Append <code class="font-mono text-brand-600 bg-brand-50">?format=simple</code> to either endpoint to receive a flat key-value object instead of the full layout response. Ideal for downstream application logic.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Output Tabs ───────────────────────────────────── -->
+  <section class="py-24 px-6 bg-white" id="output">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-12">
+        <span class="text-xs font-semibold text-brand-500 uppercase tracking-wider">Output</span>
+        <h2 class="text-3xl font-bold mt-3 text-gray-900">Two output formats</h2>
+        <p class="text-gray-500 mt-3">Simple key-value fields, or full layout data with positions and scores.</p>
+      </div>
+      <div class="bg-white border border-gray-100 rounded-2xl card-shadow overflow-hidden">
+        <div class="flex p-1.5 gap-1 bg-gray-50 border-b border-gray-100 m-4 rounded-xl">
+          <button class="tab-btn active flex-1 text-sm font-medium py-2 px-4 rounded-lg" onclick="switchTab('structured', this)">Structured Fields</button>
+          <button class="tab-btn flex-1 text-sm font-medium py-2 px-4 rounded-lg" onclick="switchTab('layout', this)">Layout Output</button>
+        </div>
+        <div class="p-6 pt-2">
+          <div id="tab-structured" class="tab-panel active">
+            <p class="text-xs text-gray-400 font-mono mb-3">// GET ?format=simple — flat key-value response</p>
+            <div class="code-block p-5 text-xs font-mono leading-relaxed">
+<pre><span class="text-gray-400">{</span>
+  <span class="text-blue-300">"name"</span>:   <span class="text-yellow-300">"Karan XXX Reddy"</span>,
+  <span class="text-blue-300">"dob"</span>:    <span class="text-yellow-300">"05/XX/1998"</span>,
+  <span class="text-blue-300">"gender"</span>: <span class="text-yellow-300">"MALE"</span>,
+  <span class="text-blue-300">"uid"</span>:    <span class="text-yellow-300">"XXX XXXX XXXX 7890"</span>
+<span class="text-gray-400">}</span></pre>
+            </div>
+          </div>
+          <div id="tab-layout" class="tab-panel">
+            <p class="text-xs text-gray-400 font-mono mb-3">// Default — layout output with bounding boxes, labels, and scores</p>
+            <div class="code-block p-5 text-xs font-mono leading-relaxed">
+<pre><span class="text-gray-400">{</span>
+  <span class="text-blue-300">"width"</span>: <span class="text-orange-300">1280</span>, <span class="text-blue-300">"height"</span>: <span class="text-orange-300">816</span>,
+  <span class="text-blue-300">"boxes"</span>: <span class="text-gray-400">[</span>
+    <span class="text-gray-400">{</span>
+      <span class="text-blue-300">"label"</span>:    <span class="text-yellow-300">"name"</span>,
+      <span class="text-blue-300">"text"</span>:     <span class="text-yellow-300">"Karan XXX Reddy"</span>,
+      <span class="text-blue-300">"fmt_text"</span>: <span class="text-gray-500">null</span>,
+      <span class="text-blue-300">"score"</span>:    <span class="text-orange-300">0.9385673851198314</span>,
+      <span class="text-blue-300">"box"</span>:      <span class="text-gray-400">[[426,230],[704,230],[704,265],[426,265]]</span>
+    <span class="text-gray-400">},</span>
+    <span class="text-gray-400">{</span>
+      <span class="text-blue-300">"label"</span>:    <span class="text-yellow-300">"dob"</span>,
+      <span class="text-blue-300">"text"</span>:     <span class="text-yellow-300">"जन्म तिथि/DOB: 05/XX/1998"</span>,
+      <span class="text-blue-300">"fmt_text"</span>: <span class="text-gray-500">null</span>,
+      <span class="text-blue-300">"score"</span>:    <span class="text-orange-300">0.9548244589662007</span>,
+      <span class="text-blue-300">"box"</span>:      <span class="text-gray-400">[[422,273],[828,273],[828,306],[422,306]]</span>
+    <span class="text-gray-400">},</span>
+    <span class="text-gray-400">{</span>
+      <span class="text-blue-300">"label"</span>:    <span class="text-yellow-300">"uid"</span>,
+      <span class="text-blue-300">"text"</span>:     <span class="text-yellow-300">"XXX XXXX XXXX 7890"</span>,
+      <span class="text-blue-300">"fmt_text"</span>: <span class="text-gray-500">null</span>,
+      <span class="text-blue-300">"score"</span>:    <span class="text-orange-300">0.9663165262058003</span>,
+      <span class="text-blue-300">"box"</span>:      <span class="text-gray-400">[[372,647],[960,647],[960,690],[372,690]]</span>
+    <span class="text-gray-400">}</span>
+  <span class="text-gray-400">]</span>
+<span class="text-gray-400">}</span></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Privacy ───────────────────────────────────────── -->
+  <section class="py-24 px-6 gradient-bg" id="privacy">
+    <div class="max-w-5xl mx-auto">
+      <div class="privacy-card rounded-3xl p-10 md:p-16 text-white overflow-hidden relative">
+        <div class="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-brand-500 opacity-[0.07]"></div>
+        <div class="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-coral-500 opacity-[0.06]"></div>
+        <div class="relative">
+          <div class="inline-flex items-center gap-2 bg-white/10 border border-white/15 text-white text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1L2 3v3c0 2.5 1.8 4.1 4 4.9C8.2 10.1 10 8.5 10 6V3L6 1z" fill="white" opacity="0.7"/></svg>
+            Privacy-first Document AI
+          </div>
+          <h2 class="text-4xl font-bold mb-3">Zero Data Retention</h2>
+          <p class="text-white/55 text-lg mb-12 max-w-xl">Your documents never leave without a trace — because they never stay.</p>
+          <div class="grid md:grid-cols-2 gap-5">
+            <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <div class="w-8 h-8 rounded-lg bg-coral-500/20 flex items-center justify-center mb-4">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="#f05252" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <h3 class="font-semibold mb-1.5">No input storage</h3>
+              <p class="text-white/50 text-sm leading-relaxed">Documents and images are never written to disk or persisted anywhere in our infrastructure.</p>
+            </div>
+            <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <div class="w-8 h-8 rounded-lg bg-coral-500/20 flex items-center justify-center mb-4">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="#f05252" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <h3 class="font-semibold mb-1.5">No output storage</h3>
+              <p class="text-white/50 text-sm leading-relaxed">Extracted fields are returned to you and never cached or stored server-side.</p>
+            </div>
+            <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <div class="w-8 h-8 rounded-lg bg-coral-500/20 flex items-center justify-center mb-4">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="#f05252" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <h3 class="font-semibold mb-1.5">No request/response logging</h3>
+              <p class="text-white/50 text-sm leading-relaxed">API payloads are never logged. What goes in stays completely private.</p>
+            </div>
+            <div class="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <div class="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center mb-4">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <h3 class="font-semibold mb-1.5">Only request count tracked</h3>
+              <p class="text-white/50 text-sm leading-relaxed">Billing uses only an anonymized request counter — nothing else is tracked.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── OCR Flexibility ───────────────────────────────── -->
+  <section class="py-24 px-6 bg-white" id="ocr">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12">
+        <span class="text-xs font-semibold text-brand-500 uppercase tracking-wider">OCR Flexibility</span>
+        <h2 class="text-3xl font-bold mt-3 text-gray-900">Bring Your Own OCR</h2>
+        <p class="text-gray-500 mt-3 max-w-xl mx-auto">No OCR lock-in — use any engine that outputs <strong>BoundingPoly</strong> (polygon coordinates per word). We use spatial layout for extraction, so polygon accuracy matters.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white border border-gray-100 rounded-2xl p-6 card-shadow hover-lift text-center">
+          <div class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8.5" stroke="#4285f4" stroke-width="1.5"/><path d="M11 7.5v3.5l2.5 2.5" stroke="#4285f4" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-1">Google Vision OCR</h3>
+          <p class="text-gray-500 text-sm">Best for high-volume cloud pipelines.</p>
+        </div>
+        <div class="bg-white border border-gray-100 rounded-2xl p-6 card-shadow hover-lift text-center">
+          <div class="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center mx-auto mb-4">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 4l8 4v6l-8 4-8-4V8l8-4z" stroke="#a855f7" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-1">Custom OCR</h3>
+          <p class="text-gray-500 text-sm">Any engine that outputs BoundingPoly coordinates.</p>
+        </div>
+      </div>
+      <div class="bg-brand-50 border border-brand-100 rounded-2xl p-6 flex gap-4 items-start">
+        <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 3 3.5.5-2.5 2.5.5 3.5L8 10l-3 1.5.5-3.5L3 5.5 6.5 5 8 2z" fill="white"/></svg>
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-900 mb-1">Advanced Privacy Mode</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">You can send <strong>detection only</strong> — bounding boxes without text — when you have sensitive data. The model works from spatial layout alone, so OCR text never leaves your infrastructure.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Use Cases ─────────────────────────────────────── -->
+  <section class="py-24 px-6 gradient-bg" id="use-cases">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12">
+        <span class="text-xs font-semibold text-brand-500 uppercase tracking-wider">Use Cases</span>
+        <h2 class="text-3xl font-bold mt-3 text-gray-900">Built for regulated industries</h2>
+        <p class="text-gray-500 mt-3">High-stakes document extraction where accuracy and privacy matter most.</p>
+      </div>
+      <div class="grid gap-8">
+        <div class="bg-white rounded-2xl border border-gray-100 p-8 card-shadow hover-lift">
+          <div class="flex flex-col md:flex-row md:gap-10">
+            <div class="flex-shrink-0 mb-5 md:mb-0">
+              <div class="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="3" stroke="#5b6be8" stroke-width="1.5"/><circle cx="12" cy="10" r="3" stroke="#5b6be8" stroke-width="1.5"/><path d="M6 20c0-2.2 2.7-4 6-4s6 1.8 6 4" stroke="#5b6be8" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-semibold text-gray-900 mb-3">KYC / Identity Verification</h3>
+              <p class="text-gray-500 leading-relaxed mb-5">Extract name, date of birth, ID numbers, and address from identity documents at scale — Aadhaar, passports, driver's licenses.</p>
+              <div class="grid sm:grid-cols-3 gap-3">
+                <div class="bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 text-sm text-brand-700 font-medium">National ID cards &amp; Aadhaar</div>
+                <div class="bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 text-sm text-brand-700 font-medium">Passports &amp; travel documents</div>
+                <div class="bg-brand-50 border border-brand-100 rounded-xl px-4 py-3 text-sm text-brand-700 font-medium">Driver's licenses</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hidden bg-white rounded-2xl border border-gray-100 p-8 card-shadow hover-lift">
+          <div class="w-12 h-12 rounded-2xl bg-green-50 flex items-center justify-center mb-5">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="#22c55e" stroke-width="1.5"/><path d="M3 10h18M8 6V4M16 6V4" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-3">Banking Documents</h3>
+          <p class="text-gray-500 leading-relaxed mb-4">Extract key fields from banking documents — payee name, amount, date, and account number.</p>
+          <ul class="space-y-2 mb-5">
+            <li class="flex items-center gap-2 text-sm text-gray-600">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
+              Cheques
+              <span class="ml-auto text-xs font-semibold bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 rounded-full">Available</span>
+            </li>
+          </ul>
+          <div class="border-t border-gray-100 pt-4">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2.5">Upcoming</p>
+            <ul class="space-y-2">
+              <li class="flex items-center gap-2 text-sm text-gray-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0"></span>Invoices
+              </li>
+              <li class="flex items-center gap-2 text-sm text-gray-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0"></span>Bank statements
+              </li>
+              <li class="flex items-center gap-2 text-sm text-gray-400">
+                <span class="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0"></span>Loan application forms
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Pricing ─────────────────────────────────────── -->
+  <section class="py-24 px-6 gradient-bg" id="pricing">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-12">
+        <span class="text-xs font-semibold text-brand-500 uppercase tracking-wider">Pricing</span>
+        <h2 class="text-3xl font-bold mt-3 text-gray-900">Pay per request</h2>
+        <p class="text-gray-500 mt-3 max-w-xl mx-auto">Pricing scales with document complexity — measured by the character length of the serialized detection array. No monthly minimums.</p>
+      </div>
+
+      <div class="bg-white rounded-2xl card-shadow overflow-hidden">
+        <!-- Table header -->
+        <div class="grid grid-cols-4 bg-gray-50 border-b border-gray-100 px-6 py-3">
+          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider font-mono">len(json.dumps(det))</div>
+          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider text-center">Tier</div>
+          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Per request</div>
+          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Per 1k requests</div>
+        </div>
+        <!-- T1 -->
+        <div class="grid grid-cols-4 px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+          <div class="text-sm text-gray-700">Up to 300</div>
+          <div class="text-center">
+            <span class="font-mono text-xs font-semibold bg-brand-50 text-brand-600 border border-brand-100 px-2.5 py-1 rounded-lg">T1</span>
+          </div>
+          <div class="text-right font-mono text-sm text-gray-800 font-medium">$0.0002</div>
+          <div class="text-right font-mono text-sm text-gray-500">$0.2000</div>
+        </div>
+        <!-- T2 -->
+        <div class="grid grid-cols-4 px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+          <div class="text-sm text-gray-700">301 – 600</div>
+          <div class="text-center">
+            <span class="font-mono text-xs font-semibold bg-brand-50 text-brand-600 border border-brand-100 px-2.5 py-1 rounded-lg">T2</span>
+          </div>
+          <div class="text-right font-mono text-sm text-gray-800 font-medium">$0.0005</div>
+          <div class="text-right font-mono text-sm text-gray-500">$0.5000</div>
+        </div>
+        <!-- T3 -->
+        <div class="grid grid-cols-4 px-6 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+          <div class="text-sm text-gray-700">601 – 900</div>
+          <div class="text-center">
+            <span class="font-mono text-xs font-semibold bg-brand-50 text-brand-600 border border-brand-100 px-2.5 py-1 rounded-lg">T3</span>
+          </div>
+          <div class="text-right font-mono text-sm text-gray-800 font-medium">$0.0008</div>
+          <div class="text-right font-mono text-sm text-gray-500">$0.8000</div>
+        </div>
+        <!-- T4 -->
+        <div class="grid grid-cols-4 px-6 py-4 items-center hover:bg-gray-50 transition-colors">
+          <div class="text-sm text-gray-700">901 – 1200</div>
+          <div class="text-center">
+            <span class="font-mono text-xs font-semibold bg-brand-50 text-brand-600 border border-brand-100 px-2.5 py-1 rounded-lg">T4</span>
+          </div>
+          <div class="text-right font-mono text-sm text-gray-800 font-medium">$0.0012</div>
+          <div class="text-right font-mono text-sm text-gray-500">$1.2000</div>
+        </div>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        <p class="text-center text-xs text-gray-400">Tier is determined by <code class="font-mono text-brand-500">len(json.dumps(det))</code> — the character length of the JSON-serialized detection array. Price estimates above are based on a <strong class="text-gray-500">1024 vector dimension</strong> model. Only request count is tracked — no data retained.</p>
+        <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-4 text-xs text-yellow-800 space-y-1.5">
+          <p><strong>Image upload endpoint:</strong> Extraction pricing follows the same tier structure, but <strong>OCR cost is charged separately</strong> on top — billed based on the OCR provider used (Google Cloud Vision or internal model).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ──────────────────────────────────────────── -->
+  <section class="py-24 px-6 bg-white" id="cta">
+    <div class="max-w-3xl mx-auto text-center">
+      <h2 class="text-4xl font-bold text-gray-900 mb-4">Start extracting structured data today</h2>
+      <p class="text-gray-500 text-lg mb-10">Get API access and go from document chaos to structured JSON in days.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="#" data-api-access class="bg-brand-500 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-brand-600 transition-colors card-shadow">Get API Access</a>
+        <a href="#" data-demo-request class="border border-gray-200 bg-white text-gray-700 px-8 py-4 rounded-xl font-semibold text-lg hover:border-brand-200 hover:text-brand-600 transition-colors card-shadow">Request a Demo</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ───────────────────────────────────────── -->
+  <footer class="bg-gray-50 border-t border-gray-100 py-10 px-6">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <img src="assets/fulllogo_transparent_nobuffer.png" alt="Deepweights" class="h-6 w-auto" />
+        <span class="text-gray-300">·</span>
+        <span class="text-gray-400 text-xs">© 2025 Deepweights</span>
+      </div>
+      <div class="flex items-center gap-8 text-sm text-gray-400">
+        <a href="#" class="hover:text-brand-500 transition-colors">Docs</a>
+        <a href="mailto:hello@deepweights.io" class="hover:text-brand-500 transition-colors">Contact</a>
+        <a href="#" class="hover:text-brand-500 transition-colors">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    function switchApiTab(tab, btn) {
+      document.querySelectorAll('.api-tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('api-ocr').style.display = 'none';
+      document.getElementById('api-image').style.display = 'none';
+      document.getElementById('api-' + tab).style.display = 'block';
+      btn.classList.add('active');
+    }
+
+    const API_MAILTO = 'mailto:anbarasan@deepweights.com'
+      + '?subject=' + encodeURIComponent('API Access Request — Deepweights DER')
+      + '&body=' + encodeURIComponent(
+          'Hi,\n\n'
+        + 'I\'m interested in getting API access to Deepweights DER.\n\n'
+        + 'Document type(s):\n'
+        + 'Use case:\n'
+        + 'Expected volume (requests/month):\n\n'
+        + 'Looking forward to hearing from you.'
+      );
+
+    document.querySelectorAll('[data-api-access]').forEach(a => a.href = API_MAILTO);
+
+    const DEMO_MAILTO = 'mailto:anbarasan@deepweights.com'
+      + '?subject=' + encodeURIComponent('Demo Request — Deepweights DER')
+      + '&body=' + encodeURIComponent(
+          'Hi,\n\n'
+        + 'I\'d like to schedule a demo of Deepweights DER.\n\n'
+        + 'Company / Team:\n'
+        + 'Document type(s) I want to see:\n'
+        + 'Preferred time (timezone):\n\n'
+        + 'Looking forward to it.'
+      );
+
+    document.querySelectorAll('[data-demo-request]').forEach(a => a.href = DEMO_MAILTO);
+  </script>
+</body>
+</html>
