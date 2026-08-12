@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DER Demo</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --bg: #f5f6fa;
+    --card-bg: #ffffff;
+    --border: #e2e4ec;
+    --text: #1f2330;
+    --muted: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+  .panel {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    flex: 1 1 480px;
+    min-width: 420px;
+  }
+  .panel h2 {
+    margin-top: 0;
+    font-size: 18px;
+  }
+  .upload-box {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .upload-box:hover, .upload-box.dragover {
+    border-color: var(--primary);
+    background: #f0f1ff;
+  }
+  .upload-box input { display: none; }
+  .preview-img {
+    max-width: 100%;
+    max-height: 320px;
+    border-radius: 8px;
+    margin-top: 12px;
+    display: none;
+  }
+  .pdf-preview {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #f0f1ff;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text);
+    word-break: break-all;
+  }
+  .pdf-preview svg { flex-shrink: 0; }
+  .config-row {
+    display: flex;
+    gap: 12px;
+    margin: 12px 0;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .config-row label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+  input[type="text"], select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--text);
+  }
+  button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: background 0.2s;
+  }
+  button:hover { background: var(--primary-dark); }
+  button:disabled {
+    background: #b7b9c9;
+    cursor: not-allowed;
+  }
+  pre.json-box {
+    background: #1e1e2e;
+    color: #a6e3a1;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 480px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 60px;
+  }
+  #resultImgsContainer {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-top: 12px;
+  }
+  .result-img {
+    flex-shrink: 0;
+    max-height: 320px;
+    width: auto;
+    border-radius: 8px;
+    display: block;
+  }
+  .result-pair {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .result-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .latency-box {
+    display: none;
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .latency-box .latency-title {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .latency-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 0;
+    border-top: 1px dashed var(--border);
+  }
+  .latency-row:first-of-type { border-top: none; }
+  .latency-row .latency-key { color: var(--muted); }
+  .latency-row .latency-val {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  .latency-row.total .latency-val { font-weight: 700; color: var(--primary-dark); }
+  .status {
+    margin-top: 10px;
+    font-size: 14px;
+    min-height: 20px;
+  }
+  .status.error { color: #dc2626; }
+  .status.success { color: #16a34a; }
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 700px) {
+    .container { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<h1>DER Demo</h1>
+<p class="subtitle">Upload an image, to view the prediction + annotated output.</p>
+
+<div class="container">
+
+  <!-- Left: Upload + Config -->
+  <div class="panel">
+    <h2>1. Upload File</h2>
+    <div class="upload-box" id="uploadBox">
+      <p id="uploadHint">Click to choose an image, or drag & drop here</p>
+      <input type="file" id="fileInput" accept="image/*">
+      <img id="previewImg" class="preview-img" alt="Preview">
+      <div class="pdf-preview" id="pdfPreview">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span id="pdfName"></span>
+      </div>
+    </div>
+
+    <h2 style="margin-top:20px;">2. API Settings</h2>
+    <div class="config-row">
+      <label style="flex:1; min-width:200px;">
+        Endpoint
+        <select id="apiUrlPreset">
+          <option value="http://localhost:7001/der/model/predict_hpi">local</option>
+          <option value="http://localhost:8080/der/model/predict_hpi">local_docker</option>
+          <option value="https://der-core-gpu-799222334682.asia-southeast1.run.app/der/model/predict">staging</option>
+          <option value="https://der-hpi-799222334682.asia-southeast1.run.app/der/model/predict_hpi" selected>hpi</option>
+          <option value="custom">custom</option>
+        </select>
+      </label>
+    </div>
+    <div class="config-row">
+      <label style="flex:1; min-width:200px;">
+        Endpoint URL
+        <input type="text" id="apiUrl" value="https://der-hpi-799222334682.asia-southeast1.run.app/der/model/predict_hpi">
+      </label>
+    </div>
+    <div class="config-row">
+      <label style="flex:1; min-width:200px;">
+        x-client-id
+        <input type="text" id="clientId" value="ZGVlcHdlaWdodHMK-1234567">
+      </label>
+    </div>
+    <div class="config-row">
+      <label style="color: #16a34a;font-weight: bold;"><input type="checkbox" id="outputImgRequired"> Mask Image</label>
+      <label><input type="checkbox" id="healthCheckEnabled"> health check</label>
+      <label>
+        format:
+        <input type="text" id="formatField" value="simple" style="width:100px;">
+      </label>
+      <label>
+        max_edge:
+        <input type="number" id="maxEdgeField" value="640" min="1" max="1200" style="width:80px;">
+      </label>
+      <label>
+        doc_type:
+        <input type="text" id="docTypeField" placeholder="optional" style="width:120px;">
+      </label>
+    </div>
+
+    <button id="sendBtn" disabled>Send Request</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- Prediction Result -->
+  <div class="panel">
+    <h2>3. Prediction Result</h2>
+    <pre class="json-box" id="jsonResult">{ }</pre>
+    <div class="latency-box" id="latencyBox"></div>
+  </div>
+
+  <!-- Output Image -->
+  <div class="panel" id="outputImagePanel">
+    <h2>4. Output Image</h2>
+    <div id="resultImgsContainer"></div>
+  </div>
+
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const uploadBox = document.getElementById('uploadBox');
+const uploadHint = document.getElementById('uploadHint');
+const previewImg = document.getElementById('previewImg');
+const pdfPreview = document.getElementById('pdfPreview');
+const pdfName = document.getElementById('pdfName');
+const sendBtn = document.getElementById('sendBtn');
+const statusEl = document.getElementById('status');
+const jsonResult = document.getElementById('jsonResult');
+const latencyBox = document.getElementById('latencyBox');
+const resultImgsContainer = document.getElementById('resultImgsContainer');
+const outputImagePanel = document.getElementById('outputImagePanel');
+const apiUrlInput = document.getElementById('apiUrl');
+const apiUrlPreset = document.getElementById('apiUrlPreset');
+const clientIdInput = document.getElementById('clientId');
+const outputImgRequired = document.getElementById('outputImgRequired');
+const healthCheckEnabled = document.getElementById('healthCheckEnabled');
+const formatField = document.getElementById('formatField');
+const maxEdgeField = document.getElementById('maxEdgeField');
+const docTypeField = document.getElementById('docTypeField');
+
+let base64File = null;
+
+function syncOutputImagePanel() {
+  outputImagePanel.style.display = outputImgRequired.checked ? '' : 'none';
+}
+
+function isHpiSelected() {
+  const opt = apiUrlPreset.selectedOptions[0];
+  return !!opt && opt.text === 'hpi';
+}
+
+function getPresetUrlByLabel(label) {
+  const opt = [...apiUrlPreset.options].find(o => o.text === label);
+  return opt ? opt.value : null;
+}
+
+function syncForHpi() {
+  const hpi = isHpiSelected();
+  // fileInput.accept = hpi ? 'image/*' : 'image/*,application/pdf';
+  fileInput.accept = 'image/*';
+  // uploadHint.textContent = hpi ? 'Click to choose an image, or drag & drop here' : 'Click to choose an image or PDF, or drag & drop here';
+  uploadHint.textContent = 'Click to choose an image, or drag & drop here';
+  if (hpi && outputImgRequired.checked) {
+    outputImgRequired.checked = false;
+    syncOutputImagePanel();
+  }
+}
+
+outputImgRequired.addEventListener('change', () => {
+  if (outputImgRequired.checked && isHpiSelected()) {
+    const stagingUrl = getPresetUrlByLabel('staging');
+    if (stagingUrl) {
+      apiUrlPreset.value = stagingUrl;
+      apiUrlInput.value = stagingUrl;
+      syncForHpi();
+      setStatus('output_img_required needs image output support, so the endpoint was switched from hpi to staging (staging supports masking/annotation output).', 'success');
+    }
+  }
+  syncOutputImagePanel();
+});
+syncOutputImagePanel();
+
+apiUrlPreset.addEventListener('change', () => {
+  if (apiUrlPreset.value !== 'custom') {
+    apiUrlInput.value = apiUrlPreset.value;
+  }
+  syncForHpi();
+});
+apiUrlInput.addEventListener('input', () => {
+  const match = [...apiUrlPreset.options].find(opt => opt.value === apiUrlInput.value);
+  apiUrlPreset.value = match ? match.value : 'custom';
+  syncForHpi();
+});
+syncForHpi();
+
+uploadBox.addEventListener('click', () => fileInput.click());
+
+uploadBox.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadBox.classList.add('dragover');
+});
+uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('dragover'));
+uploadBox.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadBox.classList.remove('dragover');
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    handleFile(e.dataTransfer.files[0]);
+  }
+});
+
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files && e.target.files[0]) {
+    handleFile(e.target.files[0]);
+  }
+});
+
+function handleFile(file) {
+  const isImage = file.type.startsWith('image/');
+  const isPdf = file.type === 'application/pdf';
+  if (!isImage && !isPdf) {
+    setStatus('Please select an image or PDF file.', 'error');
+    return;
+  }
+  if (isPdf && isHpiSelected()) {
+    setStatus('The hpi endpoint only supports images, not PDF.', 'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    base64File = dataUrl.split(',')[1];
+    if (isImage) {
+      previewImg.src = dataUrl;
+      previewImg.style.display = 'block';
+      pdfPreview.style.display = 'none';
+    } else {
+      previewImg.style.display = 'none';
+      pdfName.textContent = file.name;
+      pdfPreview.style.display = 'flex';
+    }
+    sendBtn.disabled = false;
+    setStatus('');
+  };
+  reader.readAsDataURL(file);
+}
+
+function buildPayload() {
+  const maxEdge = parseInt(maxEdgeField.value, 10);
+  const payload = {
+    format: formatField.value || 'simple',
+    max_edge: isNaN(maxEdge) ? 640 : Math.min(maxEdge, 1200),
+    annotated_img_required: outputImgRequired.checked,
+    masked_img_required: outputImgRequired.checked,
+    file: base64File
+  };
+  if (docTypeField.value.trim()) {
+    payload.doc_type = docTypeField.value.trim();
+  }
+  return payload;
+}
+
+function setStatus(msg, type) {
+  statusEl.textContent = msg;
+  statusEl.className = 'status' + (type ? ' ' + type : '');
+}
+
+function fmtMs(ms) {
+  return `${ms.toFixed(1)} ms`;
+}
+
+function findTimingFields(obj, path = '', out = []) {
+  if (obj === null || typeof obj !== 'object') return out;
+  if (Array.isArray(obj)) {
+    obj.forEach((item, i) => findTimingFields(item, path ? `${path}[${i}]` : `[${i}]`, out));
+    return out;
+  }
+  for (const [key, value] of Object.entries(obj)) {
+    const fullPath = path ? `${path}.${key}` : key;
+    if (typeof value === 'number' && /latency|duration|elapsed|time(?!zone)/i.test(key)) {
+      out.push({ key: fullPath, value });
+    } else if (value !== null && typeof value === 'object') {
+      findTimingFields(value, fullPath, out);
+    }
+  }
+  return out;
+}
+
+async function pingHealth(baseUrl) {
+  if (!healthCheckEnabled.checked) return null;
+  let healthUrl;
+  try {
+    healthUrl = new URL('/health/', baseUrl).toString();
+  } catch {
+    return { key: 'Health check', value: null, error: 'invalid endpoint URL' };
+  }
+  const start = performance.now();
+  try {
+    const res = await fetch(healthUrl, { method: 'GET' });
+    return { value: performance.now() - start, ok: res.ok };
+  } catch (err) {
+    return { value: performance.now() - start, ok: false, error: err.message };
+  }
+}
+
+function renderLatency(clientTimings, serverTimings) {
+  const rows = [...clientTimings, ...serverTimings]
+    .map(({ key, value, total, error }) => {
+      const val = error ? `failed (${error})` : fmtMs(value);
+      return `<div class="latency-row${total ? ' total' : ''}"><span class="latency-key">${key}</span><span class="latency-val">${val}</span></div>`;
+    })
+    .join('');
+  latencyBox.innerHTML = `<div class="latency-title">Latency Breakdown</div>${rows}`;
+  latencyBox.style.display = 'block';
+}
+
+sendBtn.addEventListener('click', async () => {
+  if (!base64File) return;
+
+  sendBtn.disabled = true;
+  setStatus('Sending request...');
+  jsonResult.textContent = '{ }';
+  resultImgsContainer.innerHTML = '';
+  latencyBox.style.display = 'none';
+
+  const healthBefore = await pingHealth(apiUrlInput.value);
+  const t0 = performance.now();
+
+  try {
+    const response = await fetch(apiUrlInput.value, {
+      method: 'POST',
+      headers: {
+        'x-client-id': clientIdInput.value,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(buildPayload())
+    });
+    const t1 = performance.now();
+    const serverTotalMs = response.headers.get('x-total-ms');
+    console.log(response.headers, {serverTotalMs})
+
+    const data = await response.json();
+    const t2 = performance.now();
+
+    if (!response.ok) {
+      throw new Error(data.message || `Request failed with status ${response.status}`);
+    }
+
+    const displayData = JSON.parse(JSON.stringify(data));
+    if (Array.isArray(displayData.data)) {
+      displayData.data.forEach(item => {
+        if (item.masked_img_b64) item.masked_img_b64 = '<base64 omitted, see image below>';
+        if (item.annotated_img_b64) item.annotated_img_b64 = '<base64 omitted, see image below>';
+      });
+    }
+    jsonResult.textContent = JSON.stringify(displayData, null, 2);
+
+    if (Array.isArray(data.data)) {
+      data.data.forEach((item, i) => {
+        if (!item.annotated_img_b64 && !item.masked_img_b64) return;
+
+        const pair = document.createElement('div');
+        pair.className = 'result-pair';
+
+        if (item.annotated_img_b64) {
+          let imgSrc = item.annotated_img_b64;
+          if (!imgSrc.startsWith('data:')) imgSrc = 'data:image/jpeg;base64,' + imgSrc;
+          const label = document.createElement('div');
+          label.className = 'result-label';
+          label.textContent = item.doc_type ? `Annotated – ${item.doc_type}` : `Annotated ${i + 1}`;
+          const img = document.createElement('img');
+          img.src = imgSrc;
+          img.className = 'result-img';
+          img.alt = label.textContent;
+          pair.appendChild(label);
+          pair.appendChild(img);
+        }
+
+        if (item.masked_img_b64) {
+          let imgSrc = item.masked_img_b64;
+          if (!imgSrc.startsWith('data:')) imgSrc = 'data:image/jpeg;base64,' + imgSrc;
+          const label = document.createElement('div');
+          label.className = 'result-label';
+          label.textContent = item.doc_type ? `Masked – ${item.doc_type}` : `Masked ${i + 1}`;
+          const img = document.createElement('img');
+          img.src = imgSrc;
+          img.className = 'result-img';
+          img.alt = label.textContent;
+          pair.appendChild(label);
+          pair.appendChild(img);
+        }
+
+        resultImgsContainer.appendChild(pair);
+      });
+    }
+
+    const healthAfter = await pingHealth(apiUrlInput.value);
+
+    const clientTimings = [
+      healthBefore && { key: 'Health check (before request)', value: healthBefore.value, error: healthBefore.error },
+      { key: 'Network (request → response headers)', value: t1 - t0 },
+      { key: 'Response parsing', value: t2 - t1 },
+      { key: 'Total (client-perceived)', value: t2 - t0, total: true },
+      healthAfter && { key: 'Health check (after request)', value: healthAfter.value, error: healthAfter.error }
+    ].filter(Boolean);
+    const serverTimings = findTimingFields(data).map(({ key, value }) => ({ key: `Server: ${key}`, value }));
+    if (serverTotalMs !== null && !isNaN(parseFloat(serverTotalMs))) {
+      serverTimings.push({ key: 'Server: x-total-ms (header)', value: parseFloat(serverTotalMs) });
+    }
+    renderLatency(clientTimings, serverTimings);
+
+    setStatus('Success!', 'success');
+  } catch (err) {
+    const healthAfter = await pingHealth(apiUrlInput.value);
+    const healthRows = [
+      healthBefore && { key: 'Health check (before request)', value: healthBefore.value, error: healthBefore.error },
+      healthAfter && { key: 'Health check (after request)', value: healthAfter.value, error: healthAfter.error }
+    ].filter(Boolean);
+    if (healthRows.length) renderLatency(healthRows, []);
+    jsonResult.textContent = JSON.stringify({ error: err.message }, null, 2);
+    setStatus('Error: ' + err.message, 'error');
+  } finally {
+    sendBtn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
