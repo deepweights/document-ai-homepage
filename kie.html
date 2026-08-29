@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Key Information Extraction — Deepweights</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="stylesheet" href="https://unpkg.com/antd@5.29.3/dist/reset.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/dayjs@1.11.23/dayjs.min.js"></script>
+  <script src="https://unpkg.com/antd@5.29.3/dist/antd.min.js"></script>
+  <script src="https://unpkg.com/@ant-design/icons@6.3.2/dist/index.umd.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@8.0.4/babel.min.js"></script>
+  <style>
+    :root {
+      --brand: #1677ff;
+      --brand-soft: #e6f4ff;
+      --dark: #001529;
+      --border: #f0f0f0;
+      --text-secondary: rgba(0, 0, 0, 0.65);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: rgba(0, 0, 0, 0.88);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    }
+    #root { min-height: 100vh; }
+
+    .site-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+    }
+    .site-header .brand-logo { height: 24px; display: block; }
+    .site-header .ant-menu {
+      border-bottom: none !important;
+      background: transparent;
+      line-height: 62px;
+      font-size: 14px;
+    }
+    .site-header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+    .header-nav-wrap { flex: 1; display: flex; justify-content: flex-end; }
+    .mobile-menu-btn { display: none; font-size: 18px; }
+
+    .section-eyebrow {
+      color: var(--brand);
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
+    section { padding: 56px 24px; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+
+    .hero-section {
+      background:
+        radial-gradient(60% 60% at 50% 0%, rgba(22, 119, 255, 0.08) 0%, rgba(22, 119, 255, 0) 100%),
+        #fff;
+      padding-top: 128px;
+    }
+
+    .demo-panel {
+      border-radius: 16px;
+      border: 1px solid rgba(5, 5, 5, 0.06);
+      height: 100%;
+    }
+
+    .upload-preview-wrap {
+      margin-top: 16px;
+      text-align: center;
+    }
+    .upload-preview-wrap .ant-image {
+      max-width: 100%;
+    }
+    .upload-preview-wrap img {
+      max-width: 100%;
+      max-height: 280px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      object-fit: contain;
+    }
+
+    .json-box {
+      background: #1e1e2e;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow: auto;
+      max-height: 480px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 120px;
+      margin: 0;
+    }
+    .json-box .json-key { color: #7dd3fc; }
+    .json-box .json-string { color: #a6e3a1; }
+    .json-box .json-number { color: #fab387; }
+    .json-box .json-boolean { color: #cba6f7; }
+    .json-box .json-null { color: #9399b2; }
+
+    .json-tree .ant-tree-title { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+
+    .result-img-gallery {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-top: 4px;
+    }
+    .result-img-gallery img {
+      max-height: 220px;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .empty-result {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      color: rgba(0, 0, 0, 0.35);
+      font-size: 14px;
+    }
+
+    /* Footer */
+    .site-footer {
+      background: var(--dark);
+      color: rgba(255, 255, 255, 0.65);
+      padding: 64px 24px 24px;
+    }
+    .footer-inner { max-width: 1200px; margin: 0 auto; }
+    .footer-col-title {
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .footer-link {
+      display: block;
+      color: rgba(255, 255, 255, 0.65);
+      font-size: 14px;
+      margin-bottom: 12px;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .footer-link:hover { color: #fff; }
+    .footer-bottom {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    @media (max-width: 768px) {
+      .header-nav-wrap { display: none; }
+      .mobile-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
+      section { padding: 40px 20px; }
+      .hero-section { padding-top: 104px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel-jsx" id="app-src">
+    const {
+      ConfigProvider, Menu, Button, Typography, Row, Col, Card, Tag, Space, Drawer,
+      Segmented, Select, Input, Switch, Tabs, Tree, Image, Statistic, Alert, Tooltip, Upload,
+    } = antd;
+    const { Title, Paragraph, Text } = Typography;
+    const {
+      IdcardOutlined,
+      MenuOutlined,
+      InboxOutlined,
+      CopyOutlined,
+      QuestionCircleOutlined,
+      ThunderboltOutlined,
+    } = icons;
+    const { useState, useEffect, useMemo, useCallback } = React;
+
+    const CONTACT_MAILTO =
+      "mailto:anbarasan@deepweights.com?subject=KIE%20Product%20Inquiry";
+
+    const navItems = [
+      {
+        key: "products",
+        label: <a href="index.html#products" style={{ color: "inherit" }}>Products</a>,
+      },
+      { key: "demo", label: <a href="#demo">Try the demo</a> },
+      { key: "about", label: <a href="index.html#about">About</a> },
+    ];
+
+    function Header() {
+      const [drawerOpen, setDrawerOpen] = useState(false);
+      return (
+        <header className="site-header">
+          <div className="site-header-inner">
+            <a href="index.html" style={{ display: "flex", alignItems: "center" }}>
+              <img
+                src="assets/fulllogo_transparent_nobuffer.png"
+                alt="Deepweights"
+                className="brand-logo"
+              />
+            </a>
+            <div className="header-nav-wrap">
+              <Menu mode="horizontal" items={navItems} selectable={false} triggerSubMenuAction="hover" />
+            </div>
+            <Button
+              className="mobile-menu-btn"
+              type="text"
+              icon={<MenuOutlined />}
+              onClick={() => setDrawerOpen(true)}
+            />
+          </div>
+          <Drawer
+            title={
+              <img src="assets/fulllogo_transparent_nobuffer.png" alt="Deepweights" style={{ height: 20 }} />
+            }
+            placement="right"
+            width={300}
+            onClose={() => setDrawerOpen(false)}
+            open={drawerOpen}
+            styles={{ body: { padding: 0 } }}
+          >
+            <Menu
+              mode="inline"
+              items={navItems}
+              selectable={false}
+              onClick={() => setDrawerOpen(false)}
+            />
+          </Drawer>
+        </header>
+      );
+    }
+
+    function Hero() {
+      return (
+        <section className="hero-section">
+          <div className="section-inner">
+            <span className="section-eyebrow">Products</span>
+            <Title level={1} style={{ marginTop: 8, marginBottom: 12 }}>
+              Key Information Extraction
+            </Title>
+            <Paragraph style={{ fontSize: 16, color: "var(--text-secondary)", maxWidth: 720, marginBottom: 20 }}>
+              Extract structured fields — name, DOB, ID number, and more — from identity documents through a single JSON API call.
+            </Paragraph>
+            <Space size={[8, 8]} wrap>
+              <Tag icon={<IdcardOutlined />} color="blue">🇮🇳 Aadhaar</Tag>
+              <Tag icon={<IdcardOutlined />} color="blue">🇮🇳 PAN</Tag>
+              <Tag icon={<IdcardOutlined />} color="cyan">🇸🇬 Identity Card</Tag>
+            </Space>
+          </div>
+        </section>
+      );
+    }
+
+    // ---- Demo data ----
+    const DOC_TYPES = [
+      { value: "in_aadhaar_front", label: "IN — Aadhaar (front)" },
+      { value: "in_pan", label: "IN — PAN" },
+      { value: "sn_identify_card", label: "SG — Identity Card" },
+    ];
+
+    const SAMPLE_IMAGES = [
+      { docType: "in_aadhaar_front", label: "Aadhaar sample 1", src: "assets/synthatic_test_data/in_aadhaar_test_01.jpg" },
+      { docType: "in_pan", label: "PAN sample 1", src: "assets/synthatic_test_data/in_pan_test_01.jpg" },
+      { docType: "in_pan", label: "PAN sample 2", src: "assets/synthatic_test_data/in_pan_test_02.jpg" },
+    ];
+
+    const ENV_OPTIONS = [
+      { value: "uat", label: "UAT", url: "https://asia-south1.api.uat.kie.deepweights.com/der/model/predict" },
+      { value: "prod", label: "Production", url: "https://prod.api.kie.deepweights.com/der/model/predict" },
+      { value: "local", label: "Localhost — localhost:7001/der/model/predict", url: "http://localhost:7001/der/model/predict" },
+      { value: "custom", label: "Custom URL", url: "" },
+    ];
+
+    const IS_LOCALHOST = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+    const VISIBLE_ENV_OPTIONS = IS_LOCALHOST ? ENV_OPTIONS : ENV_OPTIONS.filter((o) => o.value !== "prod");
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          resolve({ dataUrl: result, base64: result.split(",")[1] });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function urlToBase64(url) {
+      return fetch(url)
+        .then((res) => res.blob())
+        .then(
+          (blob) =>
+            new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result;
+                resolve({ dataUrl: result, base64: result.split(",")[1] });
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            })
+        );
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function syntaxHighlightJson(json) {
+      const escaped = escapeHtml(json);
+      return escaped.replace(
+        /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+        (match) => {
+          let cls = "json-number";
+          if (/^"/.test(match)) {
+            cls = /:$/.test(match) ? "json-key" : "json-string";
+          } else if (/true|false/.test(match)) {
+            cls = "json-boolean";
+          } else if (/null/.test(match)) {
+            cls = "json-null";
+          }
+          return `<span class="${cls}">${match}</span>`;
+        }
+      );
+    }
+
+    function sanitizeForDisplay(data) {
+      const clone = JSON.parse(JSON.stringify(data));
+      const walk = (node) => {
+        if (Array.isArray(node)) {
+          node.forEach(walk);
+        } else if (node && typeof node === "object") {
+          Object.keys(node).forEach((key) => {
+            if (/img_b64$/i.test(key) && typeof node[key] === "string") {
+              node[key] = "<base64 omitted — shown below>";
+            } else {
+              walk(node[key]);
+            }
+          });
+        }
+      };
+      walk(clone);
+      return clone;
+    }
+
+    function collectResultImages(data) {
+      const images = [];
+      const items = Array.isArray(data && data.data) ? data.data : [data];
+      items.forEach((item, i) => {
+        if (!item || typeof item !== "object") return;
+        if (item.annotated_img_b64) {
+          images.push({
+            key: `annotated-${i}`,
+            label: item.doc_type ? `Annotated — ${item.doc_type}` : `Annotated ${i + 1}`,
+            src: item.annotated_img_b64.startsWith("data:")
+              ? item.annotated_img_b64
+              : "data:image/jpeg;base64," + item.annotated_img_b64,
+          });
+        }
+        if (item.masked_img_b64) {
+          images.push({
+            key: `masked-${i}`,
+            label: item.doc_type ? `Masked — ${item.doc_type}` : `Masked ${i + 1}`,
+            src: item.masked_img_b64.startsWith("data:")
+              ? item.masked_img_b64
+              : "data:image/jpeg;base64," + item.masked_img_b64,
+          });
+        }
+      });
+      return images;
+    }
+
+    function buildTreeData(value, label, path) {
+      if (value !== null && typeof value === "object") {
+        const isArray = Array.isArray(value);
+        const entries = isArray ? value.map((v, i) => [i, v]) : Object.entries(value);
+        const children = entries.map(([k, v]) => buildTreeData(v, k, `${path}-${k}`));
+        const countLabel = isArray ? `[${entries.length}]` : `{${entries.length}}`;
+        return {
+          key: path,
+          title: (
+            <span>
+              <span style={{ color: "#9333ea", fontWeight: 600 }}>{label}</span>
+              <span style={{ color: "#9ca3af", marginLeft: 6 }}>{countLabel}</span>
+            </span>
+          ),
+          children,
+        };
+      }
+      const valueColor =
+        typeof value === "string" ? "#16a34a" :
+        typeof value === "number" ? "#d97706" :
+        typeof value === "boolean" ? "#2563eb" : "#9ca3af";
+      const displayValue = typeof value === "string" ? `"${value}"` : String(value);
+      return {
+        key: path,
+        title: (
+          <span>
+            <span style={{ color: "#1677ff", fontWeight: 600 }}>{label}</span>
+            <span style={{ color: "#9ca3af" }}>: </span>
+            <span style={{ color: valueColor }}>{displayValue}</span>
+          </span>
+        ),
+        isLeaf: true,
+      };
+    }
+
+    function JsonResultViewer({ data }) {
+      const treeData = useMemo(() => {
+        if (!data || typeof data !== "object") return [];
+        const entries = Array.isArray(data) ? data.map((v, i) => [i, v]) : Object.entries(data);
+        return entries.map(([k, v]) => buildTreeData(v, k, `root-${k}`));
+      }, [data]);
+
+      const raw = useMemo(() => JSON.stringify(data, null, 2), [data]);
+
+      return (
+        <Tabs
+          defaultActiveKey="tree"
+          size="small"
+          items={[
+            {
+              key: "tree",
+              label: "Tree",
+              children: (
+                <div className="json-tree">
+                  <Tree treeData={treeData} defaultExpandAll showLine />
+                </div>
+              ),
+            },
+            {
+              key: "raw",
+              label: "Raw",
+              children: (
+                <div style={{ position: "relative" }}>
+                  <Button
+                    size="small"
+                    icon={<CopyOutlined />}
+                    style={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}
+                    onClick={() => navigator.clipboard.writeText(raw)}
+                  >
+                    Copy
+                  </Button>
+                  <pre
+                    className="json-box"
+                    dangerouslySetInnerHTML={{ __html: syntaxHighlightJson(raw) }}
+                  />
+                </div>
+              ),
+            },
+          ]}
+        />
+      );
+    }
+
+    function Demo() {
+      const [sourceMode, setSourceMode] = useState("upload");
+      const [docType, setDocType] = useState(null);
+      const [sampleSrc, setSampleSrc] = useState(null);
+      const [previewUrl, setPreviewUrl] = useState(null);
+      const [base64File, setBase64File] = useState(null);
+      const [envKey, setEnvKey] = useState("uat");
+      const [customUrl, setCustomUrl] = useState("");
+      const [clientId, setClientId] = useState("ZGVlcHdlaWdodHMK-1234567");
+      const [maskImage, setMaskImage] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+      const [result, setResult] = useState(null);
+      const [responseMs, setResponseMs] = useState(null);
+
+      const resolvedUrl = envKey === "custom" ? customUrl : (ENV_OPTIONS.find((o) => o.value === envKey) || {}).url || "";
+      const isHpiEndpoint = /_hpi/.test(resolvedUrl);
+
+      useEffect(() => {
+        if (isHpiEndpoint && maskImage) setMaskImage(false);
+      }, [isHpiEndpoint]);
+
+      const loadSample = useCallback((src) => {
+        setSampleSrc(src);
+        setPreviewUrl(src);
+        setBase64File(null);
+        urlToBase64(src)
+          .then(({ base64 }) => setBase64File(base64))
+          .catch((err) => setError("Could not load sample image: " + err.message));
+      }, []);
+
+      const handleUploadFile = useCallback((file) => {
+        fileToBase64(file).then(({ dataUrl, base64 }) => {
+          setPreviewUrl(dataUrl);
+          setBase64File(base64);
+          setError(null);
+        });
+        return false;
+      }, []);
+
+      const handleSourceModeChange = (mode) => {
+        setSourceMode(mode);
+        if (mode === "sample" && !sampleSrc && SAMPLE_IMAGES.length) {
+          loadSample(SAMPLE_IMAGES[0].src);
+        }
+      };
+
+      const handleDocTypeChange = (value) => {
+        setDocType(value || null);
+      };
+
+      const handleSampleSelect = (src) => {
+        loadSample(src);
+      };
+
+      const sampleOptions = DOC_TYPES.map((dt) => ({
+        label: dt.label,
+        options: SAMPLE_IMAGES.filter((s) => s.docType === dt.value).map((s) => ({
+          value: s.src,
+          label: s.label,
+        })),
+      })).filter((group) => group.options.length > 0);
+
+      const handleSend = async () => {
+        if (!base64File || !resolvedUrl) return;
+        setLoading(true);
+        setError(null);
+        setResult(null);
+        setResponseMs(null);
+        const t0 = performance.now();
+        try {
+          const res = await fetch(resolvedUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-client-id": clientId,
+            },
+            query: {
+              
+            },
+            body: JSON.stringify({
+              ...(docType ? { doc_type: docType } : {}),
+              annotated_img_required: maskImage,
+              masked_img_required: maskImage,
+              file: base64File,
+              "format": "simple"
+            }),
+          });
+          const data = await res.json();
+          const t1 = performance.now();
+          if (!res.ok) {
+            throw new Error(data.message || `Request failed with status ${res.status}`);
+          }
+          setResult(data);
+          setResponseMs(t1 - t0);
+        } catch (err) {
+          setError(err.message || String(err));
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const resultImages = result ? collectResultImages(result) : [];
+      const displayResult = result ? sanitizeForDisplay(result) : null;
+
+      return (
+        <section id="demo" style={{ background: "#fafafa" }}>
+          <div className="section-inner">
+            <span className="section-eyebrow">Live demo</span>
+            <Title level={2} style={{ marginTop: 8, marginBottom: 32 }}>Try it yourself</Title>
+
+            <Row gutter={[24, 24]}>
+              <Col xs={24} lg={10}>
+                <Card className="demo-panel" title="1. Document" styles={{ body: { padding: 24 } }}>
+                  <Segmented
+                    block
+                    value={sourceMode}
+                    onChange={handleSourceModeChange}
+                    options={[
+                      { label: "Upload file", value: "upload" },
+                      { label: "Sample image", value: "sample" },
+                    ]}
+                  />
+
+                  {sourceMode === "upload" ? (
+                    <Upload.Dragger
+                      accept="image/*"
+                      showUploadList={false}
+                      multiple={false}
+                      beforeUpload={handleUploadFile}
+                      style={{ marginTop: 16 }}
+                    >
+                      <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+                      <p className="ant-upload-text">Click or drag an image to this area</p>
+                      <p className="ant-upload-hint">Used only for this request — nothing is stored.</p>
+                    </Upload.Dragger>
+                  ) : (
+                    <Select
+                      style={{ width: "100%", marginTop: 16 }}
+                      placeholder="Choose a synthetic test image"
+                      value={sampleSrc}
+                      onChange={handleSampleSelect}
+                      options={sampleOptions}
+                    />
+                  )}
+
+                  {previewUrl && (
+                    <div className="upload-preview-wrap">
+                      <Image src={previewUrl} alt="Document preview" />
+                    </div>
+                  )}
+                </Card>
+              </Col>
+
+              <Col xs={24} lg={14}>
+                <Card className="demo-panel" title="2. API settings" styles={{ body: { padding: 24 } }}>
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={12}>
+                      <Text type="secondary" style={{ display: "block", marginBottom: 6 }}>Environment</Text>
+                      <Select
+                        style={{ width: "100%" }}
+                        value={envKey}
+                        onChange={setEnvKey}
+                        options={VISIBLE_ENV_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                      />
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <Space size={4} style={{ marginBottom: 6 }}>
+                        <Text type="secondary">Document type (optional)</Text>
+                        <Tooltip title="Tell us which document you're sending to override the model's own classification result.">
+                          <QuestionCircleOutlined style={{ color: "rgba(0,0,0,0.35)" }} />
+                        </Tooltip>
+                      </Space>
+                      <Select
+                        style={{ width: "100%" }}
+                        placeholder="Auto-detect"
+                        allowClear
+                        value={docType}
+                        onChange={handleDocTypeChange}
+                        options={DOC_TYPES}
+                      />
+                    </Col>
+
+                    {envKey === "custom" && (
+                      <Col span={24}>
+                        <Text type="secondary" style={{ display: "block", marginBottom: 6 }}>Endpoint URL</Text>
+                        <Input
+                          value={customUrl}
+                          onChange={(e) => setCustomUrl(e.target.value)}
+                          placeholder="https://your-host/der/model/predict"
+                        />
+                      </Col>
+                    )}
+
+                    <Col span={24}>
+                      <Text type="secondary" style={{ display: "block", marginBottom: 6 }}>x-client-id</Text>
+                      <Input value={clientId} onChange={(e) => setClientId(e.target.value)} />
+                    </Col>
+
+                    <Col span={24}>
+                      <Space align="center">
+                        <Tooltip title={isHpiEndpoint ? "Not available on the _hpi endpoint" : ""}>
+                          <Switch
+                            checked={maskImage}
+                            disabled={isHpiEndpoint}
+                            onChange={setMaskImage}
+                          />
+                        </Tooltip>
+                        <Text>Return annotated / masked image</Text>
+                      </Space>
+                    </Col>
+
+                    <Col span={24}>
+                      <Text type="secondary" code style={{ fontSize: 12 }}>{resolvedUrl || "—"}</Text>
+                    </Col>
+                  </Row>
+
+                  <Button
+                    type="primary"
+                    size="large"
+                    block
+                    icon={!loading && <ThunderboltOutlined />}
+                    style={{ marginTop: 20, fontWeight: 600 }}
+                    disabled={!base64File || !resolvedUrl}
+                    loading={loading}
+                    onClick={handleSend}
+                  >
+                    Try It Free
+                  </Button>
+
+                  {error && <Alert style={{ marginTop: 16 }} type="error" showIcon message={error} />}
+                </Card>
+              </Col>
+
+              <Col span={24}>
+                <Card
+                  className="demo-panel"
+                  title="3. Result"
+                  extra={responseMs !== null && <Statistic value={responseMs} precision={0} suffix="ms" valueStyle={{ fontSize: 14 }} />}
+                  styles={{ body: { padding: 24 } }}
+                >
+                  {displayResult ? (
+                    <>
+                      <JsonResultViewer data={displayResult} />
+                      {resultImages.length > 0 && (
+                        <div className="result-img-gallery" style={{ marginTop: 20 }}>
+                          {resultImages.map((img) => (
+                            <div key={img.key}>
+                              <Text type="secondary" style={{ display: "block", marginBottom: 6, fontSize: 12 }}>{img.label}</Text>
+                              <Image src={img.src} alt={img.label} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="empty-result">Send a request to see the response here.</div>
+                  )}
+                </Card>
+              </Col>
+            </Row>
+          </div>
+        </section>
+      );
+    }
+
+    function Footer() {
+      return (
+        <footer className="site-footer">
+          <div className="footer-inner">
+            <Row gutter={[32, 32]}>
+              <Col xs={24} sm={8}>
+                <img src="assets/fulllogo_transparent_nobuffer.png" alt="Deepweights" style={{ height: 22, marginBottom: 12, filter: "brightness(0) invert(1)" }} />
+                <Paragraph style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, maxWidth: 260 }}>
+                  Applied AI products for document understanding and structured extraction.
+                </Paragraph>
+              </Col>
+              <Col xs={12} sm={8}>
+                <div className="footer-col-title">Products</div>
+                <a className="footer-link" href="#demo">Try the demo</a>
+                <a className="footer-link" href="index.html#products">All products</a>
+              </Col>
+              <Col xs={12} sm={8}>
+                <div className="footer-col-title">Company</div>
+                <a className="footer-link" href="index.html#about">About</a>
+                <a className="footer-link" href={CONTACT_MAILTO}>Contact</a>
+              </Col>
+            </Row>
+            <div className="footer-bottom">
+              <span>© 2026 Deepweights. All rights reserved.</span>
+              <span>Built for the real world.</span>
+            </div>
+          </div>
+        </footer>
+      );
+    }
+
+    function App() {
+      return (
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: "#1677ff",
+              borderRadius: 6,
+              fontFamily:
+                '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+            },
+          }}
+        >
+          <Header />
+          <Hero />
+          <Demo />
+          <Footer />
+        </ConfigProvider>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+  <script>
+    (function () {
+      var src = document.getElementById("app-src").textContent;
+      var out = Babel.transform(src, {
+        presets: [["react", { runtime: "classic" }]],
+      }).code;
+      var s = document.createElement("script");
+      s.text = out;
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>
